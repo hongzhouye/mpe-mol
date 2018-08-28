@@ -1,0 +1,71 @@
+$molecule
+0 1
+B
+H  1 1.225545
+$end
+
+$rem
+Unrestricted		False			#Save it printing some things twice
+Basis                   Gen			#Pick your favorite basis
+Exchange              	B88		        #Should be some GGA to get orbitals and derivatives 
+XC_Grid		      	000050000194	        #Pick your Integration Grid
+Max_SCF_Cycles	        1			#Have it run one cycle, or else it prints 
+XC_Batch_Size   	99999999		#Makes it so the Batches of Grid points are never smaller than one atom
+Debug_DFT	    	1			#Prints Orbitals and Gradients on grid
+Print_DFT_Grid	        1			#Prints the grid points and weights
+Symmetry 	      	False			#Turn off symmetry just in case	
+Symm_XC		        0			#Turn off symmetry in DFT just in case
+DFT_Thresh	  	120			#Set DFT neglect threshold to zero [Technically 10^(-120)]
+IThrsh_DFT            	120			#Set DFT neglect threshold to zero [Technically 10^(-120)]		
+IncDFT		      	False			#Don’t do IncDFT, as that throws away small grid points
+Mem_Static        	1000			#Give it a lot of static memory
+Mem_Total         	8000			#Give it a lot of dynamic memory
+Purecart                111
+scf_print               1
+$end
+
+$basis
+B     0
+S   1   1.00
+   4570.0000000              1.0000000
+S   1   1.00
+    685.9000000              1.0000000
+S   1   1.00
+    156.5000000              1.0000000
+S   1   1.00
+     44.4700000              1.0000000
+S   1   1.00
+     14.4800000              1.0000000
+P   1   1.00
+      6.0010000              1.0000000
+S   1   1.00
+      5.1310000              1.0000000
+S   1   1.00
+      1.8980000              1.0000000
+P   1   1.00
+      1.2410000              1.0000000
+D   1   1.00
+      0.3430000              1.0000000
+S   1   1.00
+      0.3329000              1.0000000
+P   1   1.00
+      0.3364000              1.0000000
+S   1   1.00
+      0.1043000              1.0000000
+P   1   1.00
+      0.0953800              1.0000000
+****
+H     0
+S   1   1.00
+     13.0100000              1.0000000
+S   1   1.00
+      1.9620000              1.0000000
+P   1   1.00
+      0.7270000              1.0000000
+S   1   1.00
+      0.4446000              1.0000000
+S   1   1.00
+      0.1220000              1.0000000
+****
+$end
+

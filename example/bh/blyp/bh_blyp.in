@@ -1,0 +1,186 @@
+$comment
+This is an SCF run to print out the 1-electron integrals, 2-electron integrals, and MOs.
+The 1-electron integrals are printed in the output file in AOs.
+The 2-electron integrals are printed in binary file 22.0 in MOs.
+The MO coefficients are printed in binary file 53.0.
+Do not use a cartesian basis - the RI routines do not seem to work for cartesian bases.
+The keywords 'correlation 105' and 'save_mo_integrals 2' are needed to print 2-electron integrals.
+$end
+
+$molecule
+0 1
+B
+H  1 1.225545
+$end
+
+$rem
+basis gen
+correlation 105
+exchange gen
+scf_guess core
+scf_print 1
+scf_convergence 8
+symmetry false
+sym_ignore true
+purecart 111
+iprint 200
+print_orbitals=99999
+use_new_path2 false
+save_mo_integrals 2
+XC_Grid                 000050000194
+Symm_XC         0
+IncDFT                  False
+$end
+
+$xc_functional
+C LYP 1.00
+X B88 1.00
+$end
+
+$basis
+B     0
+S   1   1.00
+   4570.0000000              1.0000000
+S   1   1.00
+    685.9000000              1.0000000
+S   1   1.00
+    156.5000000              1.0000000
+S   1   1.00
+     44.4700000              1.0000000
+S   1   1.00
+     14.4800000              1.0000000
+P   1   1.00
+      6.0010000              1.0000000
+S   1   1.00
+      5.1310000              1.0000000
+S   1   1.00
+      1.8980000              1.0000000
+P   1   1.00
+      1.2410000              1.0000000
+D   1   1.00
+      0.3430000              1.0000000
+S   1   1.00
+      0.3329000              1.0000000
+P   1   1.00
+      0.3364000              1.0000000
+S   1   1.00
+      0.1043000              1.0000000
+P   1   1.00
+      0.0953800              1.0000000
+****
+H     0
+S   1   1.00
+     13.0100000              1.0000000
+S   1   1.00
+      1.9620000              1.0000000
+P   1   1.00
+      0.7270000              1.0000000
+S   1   1.00
+      0.4446000              1.0000000
+S   1   1.00
+      0.1220000              1.0000000
+****
+$end
+
+@@@
+
+$comment
+This part of the job reads in the previous SCF as guess and then performs an RI-CCSD calculation that writes out the RI integrals
+Only works with a non-Cartesian basis.
+The RI integrals that are relevant are printed in binary files 362.0 and 363.0.
+$end
+
+$molecule
+ read
+$end
+
+$rem
+basis gen
+aux_basis gen
+correlation ccsd
+scf_guess read
+max_scf_cycles 0
+cc_max_iter 0
+symmetry false
+sym_ignore true
+purecart 111
+iprint 200
+print_orbitals=99999
+$end
+
+$basis
+B     0
+S   1   1.00
+   4570.0000000              1.0000000
+S   1   1.00
+    685.9000000              1.0000000
+S   1   1.00
+    156.5000000              1.0000000
+S   1   1.00
+     44.4700000              1.0000000
+S   1   1.00
+     14.4800000              1.0000000
+P   1   1.00
+      6.0010000              1.0000000
+S   1   1.00
+      5.1310000              1.0000000
+S   1   1.00
+      1.8980000              1.0000000
+P   1   1.00
+      1.2410000              1.0000000
+D   1   1.00
+      0.3430000              1.0000000
+S   1   1.00
+      0.3329000              1.0000000
+P   1   1.00
+      0.3364000              1.0000000
+S   1   1.00
+      0.1043000              1.0000000
+P   1   1.00
+      0.0953800              1.0000000
+****
+H     0
+S   1   1.00
+     13.0100000              1.0000000
+S   1   1.00
+      1.9620000              1.0000000
+P   1   1.00
+      0.7270000              1.0000000
+S   1   1.00
+      0.4446000              1.0000000
+S   1   1.00
+      0.1220000              1.0000000
+****
+$end
+
+$aux_basis
+B     0
+S   1   1.00
+     44.4700000              1.0000000
+S   1   1.00
+     14.4800000              1.0000000
+S   1   1.00
+      5.1310000              1.0000000
+S   1   1.00
+      1.8980000              1.0000000
+S   1   1.00
+      0.3329000              1.0000000
+P   1   1.00
+      6.0010000              1.0000000
+P   1   1.00
+      1.2410000              1.0000000
+P   1   1.00
+      0.3364000              1.0000000
+D   1   1.00
+      0.3430000              1.0000000
+****
+H     0
+S   1   1.00
+      1.9620000              1.0000000
+S   1   1.00
+      0.4446000              1.0000000
+P   1   1.00
+      0.7270000              1.0000000
+****
+$end
+
