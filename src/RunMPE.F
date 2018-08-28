@@ -172,10 +172,6 @@
 !     DFA-OEP for one pair
       write(6,*)'-------MPE1-------'
       Do i=1,No
-        If(i .eq. 1) then
-          Go to 187
-        End If
-
         vx=0d0
         Call oep(data_path,pair(:,i),vx,1,N,M,auxmomo,h,hkin,hnuc,VVc,
      \           DFTMO,FuncType,Kxx,EXX1(i))
@@ -200,8 +196,6 @@
         write(6,*)'#pair,ECI1,Ecorr1',i,ECI1(i),ECI1(i)-EXX1(i)
         EMPE=EMPE+ECI1(i)-EXX1(i)
         write(6,*)'------------------'
-
-187     Continue
 
       End do
       write(6,*)'###EDFA,EMPE1',EDFA,EMPE
