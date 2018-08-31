@@ -52,5 +52,5 @@ rm *.0
 
 /home/hzye2011/local/bin/shutils/qchem.20180508 ${name}_grid.in ${name}_grid.out
 
-python2.7 ${run_path}/writedata.py $name
-python2.7 ${run_path}/writegrid.py $name
+python ${run_path}/writedata.py $name
+python ${run_path}/writegrid.py $name

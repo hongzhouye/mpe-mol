@@ -8,13 +8,14 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
 
     # read number of basis functions in Qchem output file
     modims, auxdims = read_number_mos(name+'.out')
-    print 'basis dimensions ', modims, auxdims
+    print('basis dimensions ', modims, auxdims, flush=True)
 
     # atom coordinates
 #    natom = read_atom_number(name+'.out')
 #    coor = read_atom_coordinate(name+'.out',natom)
 
     # MO coefficients^M
+    print("Reading MO coeff...", flush=True)
     coeff = read_mo_coeff(fmos, modims)
 #    print_2d_matrix(name+'_mos.txt', coeff, cutoff)
 
@@ -22,31 +23,40 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
     # transfrom to MO basis
     # core = read_core_ints(name+'.out', modims)
     # @@HY: more accurate core Hamiltonian from binary files
+    print("Reading core Hamiltonian...", flush=True)
     core = np.loadtxt(fcore).reshape(modims, modims)
     oneeint = transform_1e(core, coeff, modims)
 
+    print("Reading core Hamiltonian component: kinetic energy...", flush=True)
     kin = read_kin_ints(name+'.out', modims)
     oneekin = transform_1e(kin, coeff, modims)     
 
+    print("Reading core Hamiltonian component: nuclear attraction...", flush=True)
     nuc = read_nuc_ints(name+'.out', modims)
     oneenuc = transform_1e(nuc, coeff, modims)
 
+    print("Reading AO overlap matrix...", flush=True)
     overlap = read_overlap_ints(name+'.out', modims)
 
     # coefficients (P | Q)^(-1/2)
+    print("Reading aux basis overlap matrix (P|Q)...", flush=True)
     invsq = read_2c2e_invsq_ints(f_PQ, auxdims)
 #    print_2d_matrix(name+'_invsqPQints.txt', invsq, cutoff)
 
     # coefficients (ij | P)
+    print("Reading aux basis-MO orbital overlap matrix (ij|P)...", flush=True)
     auxmomo = read_3c2e_ints(f_ijP, auxdims, modims, modims)
 #    print_3d_matrix(name+'_ijPints.txt', auxmomo, cutoff)
 
+    # @@HY: just realize the 2e integral read in was never used...commented
     # 2e integrals
-    twoeint = read_mo_ints(fints, finds, modims)
+    # print("Reading 2e Hamiltonian...", flush=True)
+    # twoeint = read_mo_ints(fints, finds, modims)
 #    print_4d_matrix(name+'_2eints.txt', twoeint, cutoff)
 #    print '2e integral',twoeint
 
     # calculate (P | Q)^(-1)
+    print("Computing (P|Q)...", flush=True)
     PQ_inv = matrix_square(invsq)
 
     # calculate (P | Q)    
@@ -89,6 +99,7 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
 #    dipz2 = read_dip_ints(name+'.out', modims,0,0,2)
 #    dipz2_mo = transform_1e(dipz2, coeff, modims)
 
+    print("Dumping...", flush=True)
     f1=open('dimensions.txt','w')
     f1.write(str(modims)+' '+str(nocc)+' '+str(auxdims))
     f1.close()

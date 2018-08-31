@@ -52,12 +52,15 @@ cwd = os.getcwd()
 
 # @@HY: simply call a shell script to get grid dimension and grid itself
 # @@HY: note that the grid is now in 4*np layout in order to be processed by C
+print("Calling bash script {:s}/grep_grid_dim.sh...".format(rd), flush=True)
 os.system("bash {:s}/grep_grid_dim.sh {:s}/{:s}_grid.out".\
     format(rd, cwd, name))
+print("Grepping ao_grid from {:s}/{:s}_grid.out...".format(cwd, name), flush=True)
 ao_grid('{:s}/{:s}_grid.out'.format(cwd, name))
 # now the grid in "ao_grid.txt" is in the q-chem style
 # which is silly grouped by atoms
 # I wrote a separate function to make it suitable for our calculations
+print("Transposing ao_grid...", flush=True)
 ao_grid_xform("{:s}/grid_dimension.txt".format(cwd), \
     "{:s}/ao_grid.txt".format(cwd), \
     "{:s}/ao_grid_new.txt".format(cwd))
