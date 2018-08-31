@@ -5,7 +5,7 @@
 
 #include "libxc_utils.h"
 
-const double thresh = 1.E-3;
+const double thresh = 1.E-2;
 
 const int known_func_ids[6] = {
     1,      // LDA_X
