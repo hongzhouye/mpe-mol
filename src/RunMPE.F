@@ -17,7 +17,7 @@
 !     alpha  degree of localization
 ! ------------------------------------------------
       Implicit None
-      Character*200 data_path,grid_path
+      Character*200 data_path,grid_path,str_buf,vci_name
       Integer*4 N,No,M,i,j,k,l,P,LineNum,ios,a,b,c,d,rmd
       Integer*4 FuncType
       Integer*4 maxrecs
@@ -234,6 +234,31 @@
      \    tend-tstart, " sec"
         Write(6,*)
 
+! @@HY: if "vci[i].txt" exists, GKS is not needed
+        If(i .lt. 10) then
+          Write(str_buf, '(I1,A)') i,".txt"
+        Else
+          Write(str_buf, '(I2,A)') i,".txt"
+        End If
+        vci_name = trim(data_path) // "/vci" // trim(str_buf)
+
+        Inquire(FILE=vci_name, EXIST=file_present)
+        If (file_present) then
+          Write(6, '(A)') "  Reading vci from " // trim(vci_name)
+          Write(6, '(A)') "  Skipping GKS-OEP..."
+          Write(6, *)
+          Call flush(6)
+          Open(Unit=21, File=vci_name)
+          Read(21, *) vci
+          Close(21)
+          Go to 110
+        Else
+          Write(6, '(A)') "  Vci file not detected"
+          Write(6, '(A)') "  Starting GKS-OEP..."
+          Write(6, *)
+          Call flush(6)
+        End If
+
 !       ------- GKS-OEP -------
 
         Call CPU_time(tstart)
@@ -257,15 +282,31 @@
 
 !       ------- FCI-OEP -------
 
+        If(i .eq. 1) then
+            Go to 119
+        End If
+
+        Write(6, '(A)') "  Using vgks as initial guess for FCI-OEP" 
+        Write(6, *)
+        Call flush(6)
+        vci = vGKS
+
+110     Continue
+
         Call CPU_time(tstart)
 
-        vci=vGKS; Rho=0d0
+        Rho=0d0
 !        vci=vx
 !       Note Rho is one-electron density
         do j=1,N; do k=1,N
             Rho=Rho+pair(j,i)*pair(k,i)*auxmomo(j,k,:)
         end do; end do
         Call cienergy(N,1,M,vci,h,VVp,auxmomo,Rho,ECI1(i))
+
+        Write(str_buf,'(I4)') i
+        Open(Unit=21, File=vci_name)
+          Write(21,*) vci
+        Close(21)
 
         Call CPU_time(tend)
 
@@ -278,6 +319,8 @@
         write(6,*)'------------------'
 
         Call flush(6)
+
+119     Continue
 
       End do
       write(6,*)'###EDFA,EMPE1',EDFA,EMPE
