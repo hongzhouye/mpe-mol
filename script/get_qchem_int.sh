@@ -50,7 +50,5 @@ hexdump -v -e '"%.16e "' -e '"\n"' 362.0 > 362.0.txt
 hexdump -v -e '"%.16e "' -e '"\n"' 363.0 > 363.0.txt
 rm *.0
 
-/home/hzye2011/local/bin/shutils/qchem.20180508 ${name}_grid.in ${name}_grid.out
-
+# prepare data into Fortran readable format
 python ${run_path}/writedata.py $name
-python ${run_path}/writegrid.py $name
