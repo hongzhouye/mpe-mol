@@ -11,7 +11,7 @@
 !                               0.00 for 0<FuncType<3,
 !                               1.00 for FuncType=0. 
 
-      SUBROUTINE oep(data_path,coeff,vx,nocc,modims,auxdims,auxmomo,
+      SUBROUTINE oep(grid_path,coeff,vx,nocc,modims,auxdims,auxmomo,
      \ oneeint,oneekin,oneenuc,VV,DFTmo,FuncType,Kxx,Energy)
 
 ! ------------------------------------------------
@@ -28,7 +28,7 @@
 !     energy     oep energy
 ! ------------------------------------------------
 
-      Character*200 data_path
+      Character*200 grid_path
       Integer*4 nocc,modims,auxdims,Natom
       Real*8 coeff(modims,nocc), vx(auxdims),Ek,Energy
       Real*8 auxmomo(modims,modims,auxdims), oneeint(modims,modims)
@@ -65,11 +65,11 @@
       Write(6,*)'#final W T',W,Ek
 
 !     Compute DFT energy using grids
-      open(unit=21,File=trim(data_path) // '/grid_dimension.txt')
+      open(unit=21,File=trim(grid_path) // '/grid_dimension.txt')
       read(21,*)Natom
       close(21)
 
-      Call DFTEnergy(data_path,vx,coeff,nocc,modims,auxdims,auxmomo,
+      Call DFTEnergy(grid_path,vx,coeff,nocc,modims,auxdims,auxmomo,
      \ oneeint,VV,DFTmo,Natom,FuncType,Kxx,Energy)
 
       End subroutine oep
@@ -85,10 +85,10 @@
 !
 !     Kxx    portion of EXX
 !            Kxx will be set to 0.25 for FuncType=3, and 0.0 for FuncType<3. 
-      Subroutine DFTEnergy(data_path,vx,coeff,nocc,modims,auxdims,
+      Subroutine DFTEnergy(grid_path,vx,coeff,nocc,modims,auxdims,
      \  auxmomo,oneeint,VV,DFTmo,Natom,FuncType,Kxx,Energy)
 
-      Character*200 data_path
+      Character*200 grid_path
       Integer*4 nocc,modims,auxdims,i,j,k,l,a,b,P,ierr
       Integer*4 Npoints(Natom),Nptot,Nbasis,Natom
       Integer*4 FuncType,Func_ids(2)
@@ -103,7 +103,7 @@
       Real*8, parameter :: PI = 4.d0*atan(1.d0)
 
 !     Read numbers of grid points, atomic basis functions and atoms
-      open(unit=21,File=trim(data_path) // '/grid_dimension.txt')
+      open(unit=21,File=trim(grid_path) // '/grid_dimension.txt')
       read(21,*)Natom,Npoints,Nbasis
       close(21)
 
@@ -113,7 +113,7 @@
       end do
 
 !     Read grid coordinates and weights
-      open(unit=21,File=trim(data_path) // '/grid.txt')
+      open(unit=21,File=trim(grid_path) // '/grid.txt')
       allocate(Grid(Nptot,4))
       do i=1,4
         read(21,*) Grid(:,i)
@@ -121,7 +121,7 @@
       close(21)
 
 !     Read AO basis values on grids
-      open(unit=21,File=trim(data_path) // '/ao_grid.txt')
+      open(unit=21,File=trim(grid_path) // '/ao_grid.txt')
       allocate(aogrid(Nptot*Nbasis,4))
       do i=1,4
         read(21,*) aogrid(:,i)
@@ -188,35 +188,35 @@
 !     Call C function 'eval_xc'
       Exc = 0d0
       If(FuncType .eq. 0) then
-        Write(*,*) "Requesting EXX; skipping C function 'eval_xc'" 
+        Write(6,*) "Requesting EXX; skipping C function 'eval_xc'" 
         Kxx = 1d0
         Go to 311
       Else If(FuncType .eq. 1) then
-        Write(*,*) "Requesting LDA; calling C function 'eval_xc'"
+        Write(6,*) "Requesting LDA; calling C function 'eval_xc'"
         Func_ids(1) = 1
         Func_ids(2) = 7
         Kxx = 0d0
       Else If(FuncType .eq. 2) then
-        Write(*,*) "Requesting PBE; calling C function 'eval_xc'"
+        Write(6,*) "Requesting PBE; calling C function 'eval_xc'"
         Func_ids(1) = 101
         Func_ids(2) = 130
         Kxx = 0d0
       Else If(FuncType .eq. 3) then
-        Write(*,*) "Requesting PBE0; calling C function 'eval_xc'"
+        Write(6,*) "Requesting PBE0; calling C function 'eval_xc'"
         Func_ids(1) = 101
         Func_ids(2) = 130
         Kxx = 2.5d-1
       Else If(FuncType .eq. 4) then
-        Write(*,*) "Requesting BLYP; calling C function 'eval_xc'"
+        Write(6,*) "Requesting BLYP; calling C function 'eval_xc'"
         Func_ids(1) = 106
         Func_ids(2) = 131
         Kxx = 0d0
       Else If(FuncType .eq. 13) then
-        Write(*,*) "Requesting PBE0*; calling C function 'eval_xc'"
+        Write(6,*) "Requesting PBE0*; calling C function 'eval_xc'"
         Func_ids(1) = 101
         Func_ids(2) = 130
       Else
-        Write(*,'(A,I4)') "[ERROR] Requesting unknown func ", FuncType
+        Write(6,'(A,I4)') "[ERROR] Requesting unknown func ", FuncType
         Call EXIT(1)
       End If
       Ierr = eval_xc(Nptot, modims, nocc, 2, rdm1, Grid, 
@@ -227,18 +227,18 @@
 !     Collect various contributions to energy
       Energy = (1d0-Kxx)*Exc(1)+Exc(2)+E1e+EJ+Kxx*EXX
 
-      Write(*,*) "  Energy components"
-      Write(*,*) "---------------------"
-      Write(*,'(A,F12.6)') "  Kxx        = ", Kxx
-      Write(*,'(A,F12.6)') "  E1e        = ", E1e
-      Write(*,'(A,F12.6)') "  EJ         = ", EJ
-      Write(*,'(A,F12.6)') "  raw EXX    = ", EXX
-      Write(*,'(A,F12.6)') "  scaled EXX = ", EXX*Kxx
-      write(*,'(A,F12.6)') "  raw Ex     = ", Exc(1)
-      write(*,'(A,F12.6)') "  scaled Ex  = ", Exc(1)*(1d0-Kxx)
-      write(*,'(A,F12.6)') "  Ec         = ", Exc(2)
-      Write(*,'(A,F12.6)') "  EDFT total = ", Energy
-      Write(*,*) "---------------------"
+      Write(6,*) "  Energy components"
+      Write(6,*) "---------------------"
+      Write(6,'(A,F12.6)') "  Kxx        = ", Kxx
+      Write(6,'(A,F12.6)') "  E1e        = ", E1e
+      Write(6,'(A,F12.6)') "  EJ         = ", EJ
+      Write(6,'(A,F12.6)') "  raw EXX    = ", EXX
+      Write(6,'(A,F12.6)') "  scaled EXX = ", EXX*Kxx
+      Write(6,'(A,F12.6)') "  raw Ex     = ", Exc(1)
+      Write(6,'(A,F12.6)') "  scaled Ex  = ", Exc(1)*(1d0-Kxx)
+      Write(6,'(A,F12.6)') "  Ec         = ", Exc(2)
+      Write(6,'(A,F12.6)') "  EDFT total = ", Energy
+      Write(6,*) "---------------------"
 
       deallocate(Grid)
       deallocate(aogrid)

@@ -1,6 +1,6 @@
 !     @@HY: added new variable 'data_path'
 
-      Subroutine RunMPE(N,No,M,Alpha,data_path)
+      Subroutine RunMPE(N,No,M,Alpha,data_path,grid_path)
 ! ------------------------------------------------
 ! @@HY 08/24/18
 !                 MPE CHEAT-SHEET
@@ -17,8 +17,8 @@
 !     alpha  degree of localization
 ! ------------------------------------------------
       Implicit None
-      Character*200 data_path
-      Integer*4 N,No,M,i,j,k,l,P,LineNum,ios,a,b,c,d
+      Character*200 data_path,grid_path
+      Integer*4 N,No,M,i,j,k,l,P,LineNum,ios,a,b,c,d,rmd
       Integer*4 FuncType
       Integer*4 maxrecs
       Real*8 h(N,N),hkin(N,N),hnuc(N,N),PQ(M,M),PQ_inv(M,M)
@@ -29,40 +29,50 @@
       Real*8 EXX1(No),EXX2(No,No),ECI1(No),ECI2(No,No),DFTmo(N,N)
       Real*8 vGKS(M),EGKS,EGKS1(No),EGKS2(No,No)
       Real*8 Kxx
+      Real*8 tstart, tend
       Character(len=1) junk
       logical file_present
 
+      Call CPU_time(tstart)
+
 !     Read kin+nuc matrix in MO basis
+      Write(6,*) "Reading oneeint..."
       Open(Unit=12,File=trim(data_path) // '/oneeint.txt')
       Read(12,*)h
       Close(12)
 
 !     Read kinetic matrix in MO basis
+      Write(6,*) "Reading kinetic matrix..."
       Open(Unit=13,File=trim(data_path) // '/oneekin.txt')
       Read(13,*)hkin
       Close(13)
 
 !     Read nuclear matrix in MO basis
+      Write(6,*) "Reading nuclear attraction matrix..."
       Open(Unit=14,File=trim(data_path) // '/oneenuc.txt')
       Read(14,*)hnuc
       Close(14)
 
 !     Read MO coefficients
+      Write(6,*) "Reading mo coeff matrix..."
       Open(Unit=22,File=trim(data_path) // '/coeff.txt')
       Read(22,*)DFTMO
       Close(22)
 
 !     Read (P | Q)
+      Write(6,*) "Reading (P|Q) matrix..."
       Open(Unit=15,File=trim(data_path) // '/PQ.txt')
       Read(15,*)PQ
       Close(15)
 
 !     Read (P | Q)^(-1)
+      Write(6,*) "Reading (P|Q)^{-1} matrix..."
       Open(Unit=16,File=trim(data_path) // '/PQ_inv.txt')
       Read(16,*)PQ_inv
       Close(16)
 
 !     Read (ij | P), ij in MO basis
+      Write(6,*) "Reading (ij|P) matrix..."
       Open(Unit=17,File=trim(data_path) // '/362.0.txt')
       Do i=1,N
         Do P=1,M
@@ -73,15 +83,18 @@
       End do
       Close(17)
 
+      Call flush(6)
+
 !     Read two-electron integrals
 !     First determine how many lines in 809, then read from 22
+      Write(6,*) "Determining number of significant twoeints..."
       maxrecs=100000000; LineNum=0
       Open(Unit=18, File=trim(data_path) // '/809.0.txt')
       do i=1,maxrecs
         read(18,*,IOSTAT=ios) junk
         if (ios/=0) Exit
         if (j==maxrecs) then
-          write(*,*)'Error: Max number of lines exceeded'
+          write(0,*)'Error: Max number of lines exceeded'
           stop
         endif
         LineNum=LineNum+1
@@ -89,49 +102,59 @@
       Close(18)
 
 !     Chemist's Notation
+      Write(6,*) "Reading twoeint tensor..."
       Open(Unit=18,File=trim(data_path) // '/809.0.txt')
       Open(Unit=19,File=trim(data_path) // '/22.0.txt')
       VVc=0d0
-      Do i=1,LineNum
-        read(18,*)a,b,c,d
-        if(i.gt.1)then
-          read(19,*)VVc(a,b,c,d)
-          VVc(b,a,c,d) = VVc(a,b,c,d)
-          VVc(a,b,d,c) = VVc(a,b,c,d)
-          VVc(b,a,d,c) = VVc(a,b,c,d)
-          VVc(c,d,a,b) = VVc(a,b,c,d)
-          VVc(d,c,a,b) = VVc(a,b,c,d)
-          VVc(c,d,b,a) = VVc(a,b,c,d)
-          VVc(d,c,b,a) = VVc(a,b,c,d)
-        endif
-      enddo
-      Close(18)
-      Close(19)
-
-!     Physicist's Notation (used in FCI routine)
-      Open(Unit=18,File=trim(data_path) // '/809.0.txt')
-      Open(Unit=19,File=trim(data_path) // '/22.0.txt')
       VVp=0d0
       Do i=1,LineNum
         read(18,*)a,b,c,d
         if(i.gt.1)then
           read(19,*)tmp
+          VVc(a,b,c,d) = tmp
+          VVc(b,a,c,d) = tmp
+          VVc(a,b,d,c) = tmp
+          VVc(b,a,d,c) = tmp
+          VVc(c,d,a,b) = tmp
+          VVc(d,c,a,b) = tmp
+          VVc(c,d,b,a) = tmp
+          VVc(d,c,b,a) = tmp
+          
           VVp(a,c,b,d) = tmp
-          VVp(c,a,d,b) = tmp
           VVp(b,c,a,d) = tmp
-          VVp(c,b,d,a) = tmp
           VVp(a,d,b,c) = tmp
-          VVp(d,a,c,b) = tmp
           VVp(b,d,a,c) = tmp
+          VVp(c,a,d,b) = tmp
+          VVp(d,a,c,b) = tmp
+          VVp(c,b,d,a) = tmp
           VVp(d,b,c,a) = tmp
         endif
+
+        rmd = LineNum/10
+        if(mod(i,rmd) .eq. 0) then
+          Write(6,'(A,I3,A)') "  ", (i/rmd)*10, "%"
+        End If
       enddo
       Close(18)
       Close(19)
 
+      Write(6,*) "Done with I/O!"
+
+      Call flush(6)
+
+      Call CPU_time(tend)
+
+      Write(6,'(A,F10.3,A)') "  CPU time for I/O:", tend-tstart, " sec"
+      Write(6,*)
+
+
+      Call CPU_time(tstart)
+
 !     Do Self-attractive Hartree decomposition first
       write(6,*)'**********************************'
       write(6,*)'-------SAH decomposition-------'
+
+      Call flush(6)
 
       inquire(FILE=trim(data_path) // '/pairs.txt',EXIST=file_present) !Check if file exists
       if (file_present) then
@@ -154,28 +177,66 @@
         close(21)
       end if
 
+      Call flush(6)
+
+      Call CPU_time(tend)
+
+      Write(6,'(A,F10.3,A)') "  CPU time for SAH:", tend-tstart, " sec"
+      Write(6,*)
+
+
+      Call CPU_time(tstart)
+
       Open(Unit=21, File=trim(data_path) // "/xc_func.txt")
       Read(21,*) FuncType, Kxx
       Close(21)
 
 !     DFA-OEP for total density
       write(6,*)'-----DFA-OEP for total density-----'
+      Call flush(6)
       vx=0d0; total=0d0 
       Do i=1,No
         total(i,i)=1d0
       End do
-      Call oep(data_path,total,vx,No,N,M,auxmomo,h,hkin,hnuc,VVc,
+      Call oep(grid_path,total,vx,No,N,M,auxmomo,h,hkin,hnuc,VVc,
      \         DFTMO,FuncType,Kxx,EDFA)
       write(6,*)'#EDFA',EDFA
       EMPE=EDFA
 
+      Call flush(6)
+
+      Call CPU_time(tend)
+
+      Write(6,'(A,F10.3,A)') "  CPU time for KS-OEP-total:", 
+     \  tend-tstart, " sec"
+      Write(6,*)
+
+
 !     DFA-OEP for one pair
       write(6,*)'-------MPE1-------'
+      Call flush(6)
       Do i=1,No
         vx=0d0
-        Call oep(data_path,pair(:,i),vx,1,N,M,auxmomo,h,hkin,hnuc,VVc,
+
+!       ------- KS-OEP -------
+
+        Call CPU_time(tstart)
+
+        Call oep(grid_path,pair(:,i),vx,1,N,M,auxmomo,h,hkin,hnuc,VVc,
      \           DFTMO,FuncType,Kxx,EXX1(i))
         write(6,*)'#pair,EDFA1',i,EXX1(i)
+
+        Call flush(6)
+
+        Call CPU_time(tend)
+
+        Write(6,'(A,F10.3,A)') "  CPU time for KS-OEP-MPE1:", 
+     \    tend-tstart, " sec"
+        Write(6,*)
+
+!       ------- GKS-OEP -------
+
+        Call CPU_time(tstart)
 
         vGKS=vx; Rho=0d0
 !        vGKS=0.d0
@@ -186,6 +247,18 @@
         Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i))
         write(6,*)'#pair,EGKS1',i,EGKS1(i)
 
+        Call flush(6)
+
+        Call CPU_time(tend)
+
+        Write(6,'(A,F10.3,A)') "  CPU time for GKS-OEP-MPE1:", 
+     \    tend-tstart, " sec"
+        Write(6,*)
+
+!       ------- FCI-OEP -------
+
+        Call CPU_time(tstart)
+
         vci=vGKS; Rho=0d0
 !        vci=vx
 !       Note Rho is one-electron density
@@ -193,12 +266,23 @@
             Rho=Rho+pair(j,i)*pair(k,i)*auxmomo(j,k,:)
         end do; end do
         Call cienergy(N,1,M,vci,h,VVp,auxmomo,Rho,ECI1(i))
+
+        Call CPU_time(tend)
+
+        Write(6,'(A,F10.3,A)') "  CPU time for FCI-OEP-MPE1:", 
+     \    tend-tstart, " sec"
+        Write(6,*)
+
         write(6,*)'#pair,ECI1,Ecorr1',i,ECI1(i),ECI1(i)-EXX1(i)
         EMPE=EMPE+ECI1(i)-EXX1(i)
         write(6,*)'------------------'
 
+        Call flush(6)
+
       End do
       write(6,*)'###EDFA,EMPE1',EDFA,EMPE
+
+      Call flush(6)
 
 !     EXX-OEP for two pairs
 ! @@HY: hacky way to skip MPE2

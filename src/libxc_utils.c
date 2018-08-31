@@ -5,6 +5,7 @@
 
 #include "libxc_utils.h"
 
+const double thresh = 1.E-3;
 
 const int known_func_ids[6] = {
     1,      // LDA_X
@@ -70,7 +71,6 @@ int check_nelec_grid(int np, int nocc, const double * rho,
     double nelec = 0.;
     for(int p = 0; p < np; p++)
         nelec += rho[p] * weight[p];
-    const double thresh = 1.E-5;
 
     if(fabs(nelec-nocc*2.) > thresh)
     {

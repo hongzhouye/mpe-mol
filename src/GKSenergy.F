@@ -40,6 +40,7 @@
          v=v+dv
 
          Write(6,*)'##Convergence',iter,Resid,Norm,Energy,Energynew
+         Call flush(6)
       End Do
 
 !     First-order correction to energy when density is not perfectly matched
@@ -48,5 +49,6 @@
       Do i=1,M; Energynew=Energynew-v(i)*(Rho(i)-NewRho(i)); End Do
 
       Write(6,*)'##GKS Convergence',iter,Resid,Norm,Energy,Energynew
+      Call flush(6)
 
       End subroutine GKSenergy

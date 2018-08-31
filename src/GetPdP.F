@@ -24,7 +24,7 @@
 !      write ( *, '(a,i8)' ) '  The number of threads available    = ',
 !     \                       omp_get_max_threads()
 
-      call omp_set_num_threads(4)
+!      call omp_set_num_threads(4)
 !      write(6,*)'threads serial',OMP_get_num_threads()
 
       P=0d0; dP=0d0
