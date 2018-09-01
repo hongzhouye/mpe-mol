@@ -1,0 +1,13 @@
+$rem
+	basis			gen
+	aux_basis		gen
+	correlation		ccsd
+	scf_guess		read
+	max_scf_cycles	0
+	cc_max_iter		0
+	symmetry		false
+	sym_ignore		true
+	purecart		111
+	iprint			200
+	print_orbitals	99999
+$end

@@ -1,0 +1,4 @@
+$xc_functional
+	C	PBE		1.00
+	X	PBE		1.00
+$end

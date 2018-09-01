@@ -1,0 +1,18 @@
+$rem
+	basis				gen
+	correlation			105
+	exchange			gen
+	! scf_guess			core
+	scf_convergence		8
+	scf_print			1
+	symmetry			false
+	sym_ignore			true
+	purecart			111
+	iprint				200
+	print_orbitals		99999
+	use_new_path2		false
+	save_mo_integrals	2
+	XC_Grid             000050000194
+	Symm_XC				0
+	IncDFT              False
+$end
