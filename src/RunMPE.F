@@ -156,9 +156,9 @@
 
       Call flush(6)
 
-      inquire(FILE=trim(data_path) // '/pairs.txt',EXIST=file_present) !Check if file exists
+      inquire(FILE='pairs.txt',EXIST=file_present) !Check if file exists
       if (file_present) then
-        open(unit=21,File=trim(data_path) // '/pairs.txt')
+        open(unit=21,File='pairs.txt')
         read(21,*) alpha
         write(6,*) 'Reading pair densities from a file. Alpha= ', alpha
         read(21,*) pair
@@ -171,7 +171,7 @@
             pair(i,i)=1d0
         End do
         Call partition(No,N,M,PQ,PQ_inv,auxmomo,h,hkin,alpha,pair)
-        open(unit=21,File=trim(data_path) // '/pairs.txt')
+        open(unit=21,File='pairs.txt')
           write(21,*) alpha
           write(21,*) pair
         close(21)
@@ -240,7 +240,7 @@
         Else
           Write(str_buf, '(I2,A)') i,".txt"
         End If
-        vci_name = trim(data_path) // "/vci" // trim(str_buf)
+        vci_name = "vci" // trim(str_buf)
 
         Inquire(FILE=vci_name, EXIST=file_present)
         If (file_present) then
@@ -282,10 +282,6 @@
 
 !       ------- FCI-OEP -------
 
-        If(i .eq. 1) then
-            Go to 119
-        End If
-
         Write(6, '(A)') "  Using vgks as initial guess for FCI-OEP" 
         Write(6, *)
         Call flush(6)
@@ -319,8 +315,6 @@
         write(6,*)'------------------'
 
         Call flush(6)
-
-119     Continue
 
       End do
       write(6,*)'###EDFA,EMPE1',EDFA,EMPE

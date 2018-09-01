@@ -11,7 +11,7 @@
       Call GetArg(1, arg_buf)
       Read(arg_buf,*) Alpha
       Call GetArg(2, data_path)
-      Call GetArg(2, grid_path)
+      Call GetArg(3, grid_path)
 
       Open(Unit=11,File=trim(data_path) // '/dimensions.txt')
       Read(11,*)N,No,M
