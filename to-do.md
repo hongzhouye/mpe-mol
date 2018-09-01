@@ -10,7 +10,7 @@
    - [ ] CH2
    - [ ] CH4
    - [ ] H2O
-   - [ ] HF`
+   - [ ] HF
 * Functionals to be explored:
    - [ ] LDA
    - [ ] PBE
@@ -28,12 +28,12 @@
    - [ ] CH3F
    - [ ] CH3Cl
    - [ ] CH3OH
-   - [ ] H```C```N
-   - [ ] F-```CH3F
-   - [ ] F-```CH3Cl
-   - [ ] F-```CH3OH
-   - [ ] Cl-```CH3F
-   - [ ] OH-```CH3F
+   - [ ] H•••C•••N
+   - [ ] F-•••CH3F
+   - [ ] F-•••CH3Cl
+   - [ ] F-•••CH3OH
+   - [ ] Cl-•••CH3F
+   - [ ] OH-•••CH3F
 * Functional to be explored:
    - [ ] PBE
    
