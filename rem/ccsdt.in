@@ -1,0 +1,14 @@
+$rem
+	basis				gen
+	! scf_guess			core
+	scf_convergence		8
+	scf_print			1
+	symmetry			false
+	sym_ignore			true
+	purecart			111
+	XC_Grid             000050000194
+	Symm_XC				0
+	IncDFT              False
+
+	method				ccsd(t)
+$end
