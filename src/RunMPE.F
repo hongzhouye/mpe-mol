@@ -1,6 +1,6 @@
-!     @@HY: added new variable 'data_path'
+!     @@HY: added new variable 'data_path', 'grid_path', and 'pair_num'
 
-      Subroutine RunMPE(N,No,M,Alpha,data_path,grid_path)
+      Subroutine RunMPE(N,No,M,Alpha,data_path,grid_path,pair_num)
 ! ------------------------------------------------
 ! @@HY 08/24/18
 !                 MPE CHEAT-SHEET
@@ -29,6 +29,7 @@
       Real*8 EXX1(No),EXX2(No,No),ECI1(No),ECI2(No,No),DFTmo(N,N)
       Real*8 vGKS(M),EGKS,EGKS1(No),EGKS2(No,No)
       Real*8 Kxx
+      Integer*4 pair_num
       Real*8 tstart, tend
       Character(len=1) junk
       logical file_present
@@ -218,6 +219,8 @@
       Do i=1,No
         vx=0d0
 
+        If((pair_num .gt. 0) .and. (i /= pair_num)) Go to 149
+
 !       ------- KS-OEP -------
 
         Call CPU_time(tstart)
@@ -315,6 +318,8 @@
         write(6,*)'------------------'
 
         Call flush(6)
+
+149     Continue
 
       End do
       write(6,*)'###EDFA,EMPE1',EDFA,EMPE
