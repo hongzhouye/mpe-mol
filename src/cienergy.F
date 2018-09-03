@@ -9,6 +9,33 @@
       Real*8 Diff(M),dRho(M,M),dv(M),NewRho(M)
       Real*8 Norm, Max, Resid,Trace, Value,Fac,eps,Pred,Tmp
       Real*8 tstart, tend, ostart, oend
+      Real*8 threshs(3), lbds(3), epss(2)
+      logical file_present
+
+! @@HY: read regularization and step length from file "ls_params.txt"
+!       if file not exist, use default values
+
+      Inquire(File="ls_params.txt", Exist=file_present )
+      If(file_present) then
+        Write(6, '(A)') "  LinSrch parameter file detected!"
+        Write(6, '(A)') "  Reading parameters from file:"
+        Open(Unit=21, File="ls_params.txt")
+        Read(21, *) threshs
+        Read(21, *) lbds
+        Read(21, *) epss
+        Close(21)
+      Else
+        Write(6, '(A)') "  LinSrch parameter file not found!"
+        Write(6, '(A)') "  Using default parameters:"
+        threshs = (/ 1d-3, 5d-4, 1d-5 /)
+        lbds = (/ 1d-6, 1d-12, 1d-15 /)
+        epss = (/ 2d0, 1d0 /)
+      End If
+
+      Write(6, '(A, E8.1, E8.1, E8.1)') "  threshs : ", threshs
+      Write(6, '(A, E8.1, E8.1, E8.1)') "  lbds    : ", lbds
+      Write(6, '(A, E8.1, E8.1)')       "  epss    : ", epss
+      Call flush(6)
 
 !     Iterate to convergence
       Norm=1d0; Resid=1d0; iter=0
@@ -28,34 +55,24 @@
      \     tend-tstart, " sec"
          Write(6,'(A,F10.3,A)') "  Wall time for GetPdP:", 
      \     oend-ostart, " sec"
-         Write(6,*)
          Call flush(6)
       
 !     Get Step Direction
-         Call CPU_time(tstart)
-
          Do i=1,M; Diff(i)=NewRho(i)-Rho(i); End Do
          Resid=0d0
          Do i=1,M; Resid=Resid+Diff(i)**2; End Do; Resid=Sqrt(Resid)
-         if(Resid.gt.1d-3)then
-           Call GetLSQ(M,M,Diff,dRho,1d-6,dv)
-         else if(Resid.gt.5d-4.and.Resid.lt.1d-3) then
-           Call GetLSQ(M,M,Diff,dRho,1d-12,dv)
+         if(Resid.gt.threshs(1))then
+           Call GetLSQ(M,M,Diff,dRho,lbds(1),dv)
+         else if(Resid.gt.threshs(2).and.Resid.lt.threshs(1)) then
+           Call GetLSQ(M,M,Diff,dRho,lbds(2),dv)
          else
-           Call GetLSQ(M,M,Diff,dRho,1d-15,dv)
+           Call GetLSQ(M,M,Diff,dRho,lbds(3),dv)
          end if
-
-         Call CPU_time(tend)
-
-         Write(6,'(A,F10.3,A)') "  CPU time for LnSrch:", 
-     \     tend-tstart, " sec"
-         Write(6,*)
-         Call flush(6)
 
 !     Step along direction
          Norm=0d0; Do i=1,M; Norm=Norm+dv(i)**2; End Do; Norm=Sqrt(Norm)
-         eps=1d0
-         if(Resid.lt.1d-5)eps=2d0
+         eps=epss(2)
+         if(Resid.lt.threshs(3))eps=epss(1)
          If(Norm.gt.eps)dv=dv/Norm*eps
 
 !     First-order correction to energy when density is not perfectly matched
