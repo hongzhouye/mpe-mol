@@ -28,8 +28,15 @@
       Else
         Write(6, '(A)') "  LinSrch parameter file not found!"
         Write(6, '(A)') "  Using default parameters:"
-        threshs = (/ 1d-3, 5d-4, 1d-5 /)
-        lbds = (/ 1d-6, 1d-12, 1d-15 /)
+! @@HY: I found these parameters are not good except for some really
+!       easy cases. The regularization constant does not need to
+!       decrease to 1d-15. Increasing it to 1d-8 ~ 1d-10 is completely 
+!       fine especially considering that our precision is 1d-5 ~1d-6.
+!        threshs = (/ 1d-3, 5d-4, 1d-5 /)
+!        lbds = (/ 1d-6, 1d-12, 1d-15 /)
+!        epss = (/ 2d0, 1d0 /)
+        threshs = (/ 1d-4, 1d-6, 1d-4 /)
+        lbds = (/ 1d-5, 1d-7, 1d-9 /)
         epss = (/ 2d0, 1d0 /)
       End If
 
