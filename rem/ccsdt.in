@@ -11,4 +11,5 @@ $rem
 	IncDFT              False
 
 	method				ccsd(t)
+	N_FROZEN_CORE		0
 $end
