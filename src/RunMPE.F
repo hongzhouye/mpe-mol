@@ -304,7 +304,7 @@
         do j=1,N; do k=1,N
             Rho=Rho+pair(j,i)*pair(k,i)*auxmomo(j,k,:)
         end do; end do
-        Call cienergy(N,1,M,vci,h,VVp,auxmomo,Rho,ECI1(i))
+        Call cienergy(N,1,M,vci,h,VVp,auxmomo,Rho,ECI1(i),vci_name)
 
         Write(str_buf,'(I4)') i
         Open(Unit=21, File=vci_name)

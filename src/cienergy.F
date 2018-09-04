@@ -1,4 +1,4 @@
-      Subroutine cienergy(N,No,M,v,hh,VV,wi,Rho,Energy)
+      Subroutine cienergy(N,No,M,v,hh,VV,wi,Rho,Energy,vci_name)
       Use FCIUtils
       Use omp_lib
       Implicit None
@@ -11,6 +11,7 @@
       Real*8 tstart, tend, ostart, oend
       Real*8 threshs(3), lbds(3), epss(2)
       logical file_present
+      Character*200 vci_name
 
 ! @@HY: read regularization and step length from file "ls_params.txt"
 !       if file not exist, use default values
@@ -35,11 +36,12 @@
       Write(6, '(A, E8.1, E8.1, E8.1)') "  threshs : ", threshs
       Write(6, '(A, E8.1, E8.1, E8.1)') "  lbds    : ", lbds
       Write(6, '(A, E8.1, E8.1)')       "  epss    : ", epss
+      Write(6, *)
       Call flush(6)
 
 !     Iterate to convergence
       Norm=1d0; Resid=1d0; iter=0
-      Do While(Resid.gt.1d-7.and.iter.lt.50)
+      Do While(Resid.gt.1d-6.and.iter.lt.50)
          iter=iter+1
          Nstr=NcR(N,No)
 
@@ -82,6 +84,12 @@
          End Do
 
          v=v+dv
+
+! @@HY: write vci to file at each iteration!
+!       make it easy for restarting the calculation!
+         Open(Unit=37, File=trim(vci_name))
+         Write(37, *) v
+         Close(37)
 
          Write(6,*)'##Convergence',iter,Resid,Norm,Energy,Energynew
          Call flush(6)
