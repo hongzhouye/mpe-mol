@@ -188,7 +188,7 @@
 
       Call CPU_time(tstart)
 
-      Open(Unit=21, File=trim(data_path) // "/xc_func.txt")
+      Open(Unit=21, File="xc_func.txt")
       Read(21,*) FuncType, Kxx
       Close(21)
 
@@ -274,6 +274,10 @@
         end do; end do
         Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i))
         write(6,*)'#pair,EGKS1',i,EGKS1(i)
+
+        Open(Unit=33, File=vci_name)
+        Write(33, *) vGKS
+        Close(33)
 
         Call flush(6)
 
