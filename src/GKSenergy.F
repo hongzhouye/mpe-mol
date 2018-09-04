@@ -1,4 +1,4 @@
-      Subroutine GKSenergy(N,No,M,v,hh,VV,wi,Rho,Energy)
+      Subroutine GKSenergy(N,No,M,v,hh,VV,wi,Rho,Energy,vci_name)
       Implicit None
       Integer*4 i,j,k,N,No,iter,M
       Real*8 v(M),Rho(M),wi(N,N,M)
@@ -6,6 +6,7 @@
       Real*8 hh(N,N), VV(N,N,N,N)
       Real*8 Diff(M),dRho(M,M),dv(M),NewRho(M)
       Real*8 Norm,Resid,eps
+      Character*200 vci_name
 
 !     Iterate to convergence
       Norm=1d0; Resid=1d0; iter=0
@@ -38,6 +39,12 @@
          End Do
 
          v=v+dv
+
+! @@HY: write vci to file at each iteration!
+!       make it easy for restarting the calculation!
+         Open(Unit=37, File=trim(vci_name))
+         Write(37, *) v
+         Close(37)
 
          Write(6,*)'##Convergence',iter,Resid,Norm,Energy,Energynew
          Call flush(6)

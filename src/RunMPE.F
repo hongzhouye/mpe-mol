@@ -272,7 +272,7 @@
         do j=1,N; do k=1,N
             Rho=Rho+2d0*pair(j,i)*pair(k,i)*auxmomo(j,k,:)
         end do; end do
-        Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i))
+        Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i),vci_name)
         write(6,*)'#pair,EGKS1',i,EGKS1(i)
 
         Open(Unit=33, File=vci_name)
