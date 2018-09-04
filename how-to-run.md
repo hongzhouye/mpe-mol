@@ -81,7 +81,7 @@ bash get_qchem_int.sh $run_path/data/pbe bh3_pbe                # you might need
 ```
 You should get a bunch of `txt` files including `oneeint.txt`, `oneekin.txt`, and etc.
 
-### Doing SAH decomposition
+### Do SAH decomposition
 
 ```shell
 cd $run_path
@@ -96,4 +96,19 @@ Fortran runtime error: End of file
 ```
 which is intended! The point is that it writes the pair densities information in `pairs.txt` which we can resuse in the next step.
 
-### 
+### Run MPE for each pair!
+
+```
+cd $run_path/alp_4.0/pbe
+for I in `seq 1 1 4`                                            # for bh3 there are 4 pairs of electrons
+do
+  mkdir -p $I
+  cd $I
+  
+  cp ../pairs.txt $I                                            # copy pair densities 
+  cp $MPE_ROOT/xc_func/xc_func_pbe.txt ./xc_func.txt            # copy the xc_func file
+  $MPE_ROOT/src/mpe.out 4.0 ../../../data/pbe ../../../grid $I  # with the fourth arg, it runs for only the `$I`-th pair
+  
+  cd ..
+done
+```
