@@ -3,12 +3,20 @@ from sys import argv
 #from HF import *
 import numpy as np
 import time
+import os
 
-def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fmos='53.0.txt', f_PQ='363.0.txt', f_ijP='362.0.txt', cutoff=0):
+def writedata(name, rd, cwd, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fmos='53.0.txt', f_PQ='363.0.txt', f_ijP='362.0.txt', cutoff=0):
 
     # read number of basis functions in Qchem output file
-    modims, auxdims = read_number_mos(name+'.out')
-    print('basis dimensions ', modims, auxdims, flush=True)
+    # modims, auxdims = read_number_mos(name+'.out')
+    #@@HY: the function above is too slow for giant output file!
+    #      I wrote an efficient implementation which 
+    #      (i) greps nbas/nelec/naux much faster and
+    #      (ii) extracts Ekin and Enuc matrices so no need to read
+    #           them from the output file line by line (extremly slow!)
+    os.system("bash {:s}/grep_int_dim.sh {:s}/{:s}.out".format(rd, cwd, name))
+    with open("{:s}/dimensions.txt".format(cwd), "r") as f:
+       modims, nelec, auxdims = list( map(int, f.readline().split()))
 
     # atom coordinates
 #    natom = read_atom_number(name+'.out')
@@ -28,15 +36,18 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
     oneeint = transform_1e(core, coeff, modims)
 
     print("Reading core Hamiltonian component: kinetic energy...", flush=True)
-    kin = read_kin_ints(name+'.out', modims)
+    # kin = read_kin_ints(name+'.out', modims)
+    kin = read_kin_ints("_hy_tmp_kin", modims)
     oneekin = transform_1e(kin, coeff, modims)     
 
     print("Reading core Hamiltonian component: nuclear attraction...", flush=True)
-    nuc = read_nuc_ints(name+'.out', modims)
+    # nuc = read_nuc_ints(name+'.out', modims)
+    nuc = read_nuc_ints("_hy_tmp_nuc", modims)
     oneenuc = transform_1e(nuc, coeff, modims)
 
-    print("Reading AO overlap matrix...", flush=True)
-    overlap = read_overlap_ints(name+'.out', modims)
+    # @@HY: haven't seen this been used in anywhere so commented
+    # print("Reading AO overlap matrix...", flush=True)
+    # overlap = read_overlap_ints(name+'.out', modims)
 
     # coefficients (P | Q)^(-1/2)
     print("Reading aux basis overlap matrix (P|Q)...", flush=True)
@@ -100,9 +111,10 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
 #    dipz2_mo = transform_1e(dipz2, coeff, modims)
 
     print("Dumping...", flush=True)
-    f1=open('dimensions.txt','w')
-    f1.write(str(modims)+' '+str(nocc)+' '+str(auxdims))
-    f1.close()
+    # @@HY: "dimensions.txt" has been taken care of by "grep_int_dim.sh"
+    # f1=open('dimensions.txt','w')
+    # f1.write(str(modims)+' '+str(nocc)+' '+str(auxdims))
+    # f1.close()
 
     print_2d_matrix('oneeint.txt', oneeint, cutoff)
     print_2d_matrix('oneekin.txt', oneekin, cutoff)
@@ -110,9 +122,15 @@ def writedata(name, fcore="802.0.txt", fints='22.0.txt', finds = '809.0.txt', fm
     print_2d_matrix('PQ.txt', PQ, cutoff)
     print_2d_matrix('PQ_inv.txt', PQ_inv, cutoff)
     print_2d_matrix('coeff.txt', coeff, cutoff)
-    print_2d_matrix('overlap.txt',overlap,cutoff)
+    # print_2d_matrix('overlap.txt',overlap,cutoff)
 
 start_time = time.time()
 name = argv[1]
-writedata(name)
+
+# root directory where this script is stored
+rd = os.path.dirname(os.path.realpath(__file__))
+# current working directory
+cwd = os.getcwd()
+
+writedata(name, rd, cwd)
 print("--- %s seconds ---" % (time.time() - start_time))
