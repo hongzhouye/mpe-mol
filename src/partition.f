@@ -142,7 +142,8 @@
 
 !     Loop until density matrix difference is small
       jter=0
-      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.1000)
+!      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.1000)
+      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.2000)
           jter=jter+1
       !   RI coefficient for each pair density
           daux=0d0
@@ -276,7 +277,8 @@
       Do i=1,auxdims; Resid=Resid+W(i)**2; End do; Resid=Sqrt(Resid)
 
       jter=0; norm=1d0
-      Do while (norm.gt.1d-5 .and. jter.lt.1000)
+!      Do while (norm.gt.1d-5 .and. jter.lt.1000)
+      Do while (norm.gt.1d-5 .and. jter.lt.2000)
           jter=jter+1
       !   Compute the response kernel dW/dlamb
           deriv=0d0
