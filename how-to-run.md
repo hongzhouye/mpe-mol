@@ -1,4 +1,4 @@
-# 10 steps to run an MPE calculation
+# 6 steps to run an MPE calculation
 
 Take BH3 molecule as an example. Suppose everythin is run in some directory given by `$run_path`.
 
