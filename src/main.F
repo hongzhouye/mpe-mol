@@ -5,8 +5,16 @@
 
       If(Iargc() .lt. 3) then
         Write(6,'(A)') "Usage: alpha data_path grid_path [pair_num]"
-        Write(6,'(A)') " Arg4 (pair_num) is optional."
-        Write(6,'(A)') " If given, only that pair is computed."
+        Write(6, *)
+        Write(6,'(A)') "  Arg4 (pair_num) is optional:"
+        Write(6,'(A)') "  Case1: not give --> perform normal MPE1 for"
+     \    // " all pairs sequentially."
+        Write(6,'(A)') "  Case2: positive --> perform normal MPE1 for"
+     \    // " that pair only."
+        Write(6,'(A)') "  Case3: negative --> perform KS-OEP for that"
+     \    // " pair only (skip GKS/FCI)."
+        Write(6,'(A)') "  Case4: 0        --> perform KS-OEP for all"
+     \    // " pairs (skip GKS/FCI)."
         Call EXIT(1)
       End If
 

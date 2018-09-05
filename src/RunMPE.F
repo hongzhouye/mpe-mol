@@ -219,7 +219,13 @@
       Do i=1,No
         vx=0d0
 
-        If((pair_num .gt. 0) .and. (i /= pair_num)) Go to 149
+! @@HY: positive pair_num means to perform MPE1 on that pair only
+!       negative pair_num means to perform KS-OEP on that pair only
+        If((pair_num .gt. 0) .and. (i /= pair_num)) Then
+          Go to 149
+        Else If((pair_num .lt. 0) .and. (i /= -pair_num)) Then
+          Go to 149
+        End If
 
 !       ------- KS-OEP -------
 
@@ -236,6 +242,9 @@
         Write(6,'(A,F10.3,A)') "  CPU time for KS-OEP-MPE1:", 
      \    tend-tstart, " sec"
         Write(6,*)
+
+! @@HY: non-positive pair_num means to skip GKS and FCI-OEP
+        If(pair_num .lt. 1) Go to 149
 
 ! @@HY: if "vci[i].txt" exists, GKS is not needed
         If(i .lt. 10) then
