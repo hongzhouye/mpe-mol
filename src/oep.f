@@ -12,7 +12,8 @@
 !                               1.00 for FuncType=0. 
 
       SUBROUTINE oep(grid_path,coeff,vx,nocc,modims,auxdims,auxmomo,
-     \ oneeint,oneekin,oneenuc,VV,DFTmo,FuncType,Kxx,Energy)
+     \ oneeint,oneekin,oneenuc,VV,DFTmo,FuncType,Kxx,Energy,itotal,
+     \ conv_thr,max_iter)
 
 ! ------------------------------------------------
 ! @@HY 08/26/18
@@ -38,6 +39,9 @@
       Real*8 VV(modims,modims,modims,modims),DFTmo(modims,modims)
       Integer*4 FuncType
       Real*8 Kxx
+      logical itotal
+      Real*8 conv_thr
+      Integer*4 max_iter
 
       alpha=1d0; beta=0d0
 !     Compute the external potential energy (constant)
@@ -52,7 +56,8 @@
 
 !     Newton's Optimization to search for OEP
       Call newton(vx,coeff,nocc,modims,auxdims,auxmomo,
-     \ oneeint,oneekin,oneenuc,1d-12,1000)
+     \ oneeint,oneekin,oneenuc,conv_thr,max_iter,itotal)
+!     \ oneeint,oneekin,oneenuc,1d-12,1000)
 
 !     Final Lagrangian and kinetic energy
       Call func(vx,coeff,nocc,modims,auxdims,auxmomo,
@@ -396,7 +401,7 @@
 
 !     Newton's method
       Subroutine newton(vx,coeff,nocc,modims,auxdims,auxmomo,
-     \ oneeint,oneekin,oneenuc,gtol,maxiter)
+     \ oneeint,oneekin,oneenuc,gtol,maxiter,itotal)
 
       Integer*4 nocc,modims,auxdims,i,j,k,P,maxiter
       Real*8 coeff(modims,nocc), vx(auxdims),alpha,beta
@@ -406,6 +411,55 @@
       Real*8 tmp1d2(auxdims),eigs(modims),eigv(modims,modims)
       Real*8 hess(auxdims,auxdims),deriv(auxdims),gtol
       Real*8 norm_grad,dvx(auxdims),step,eps
+      Real*8 threshs(3), lbds(3), epss(2)
+      logical file_present,itotal
+
+! @@HY: read regularization and step length from file "ls_params_ks.txt"
+!       if file not exist, use default values
+
+      If(itotal) then
+        Write(6, '(A)') "  OEP for total system; use default ls params"
+        threshs = (/ 1d-3, 1d-5, 1d-5 /)
+        lbds = (/ 1d-6, 1d-12, 1d-18 /)
+        epss = (/ 2d0, 5d-1 /)
+        Go to 149
+      End If
+
+      Inquire(File="ls_params_ks.txt", Exist=file_present )
+      If(file_present) then
+        Write(6, '(A)') "  LinSrch parameter file detected!"
+        Write(6, '(A)') "  Reading parameters from file:"
+        Open(Unit=21, File="ls_params_ks.txt")
+        Read(21, *) threshs
+        Read(21, *) lbds
+        Read(21, *) epss
+        Close(21)
+      Else
+        Write(6, '(A)') "  LinSrch parameter file not found!"
+        Write(6, '(A)') "  Using default parameters:"
+        Write(6, '(A)') 
+     \       "  [Warning] The default is generally good as"
+     \    // " the KS inversion is less singular compared to the FCI"
+     \    // " inversion, which justifies the use of smaller lbd such"
+     \    // " as 1d-12. However, for hard cases such as Cl- (large"
+     \    // " anion) or even CH3OH, even the KS inversion becomes"
+     \    // " singular and we need larger lbd's. Recommended values:"
+        Write(6, '(A)') "    threshs = (/ 1d-3, 5d-5, 1d-5 /)"
+        Write(6, '(A)') "    lbds    = (/ 1d-5, 1d-8, 1d-12 /)"
+        Write(6, '(A)') "    epss    = (/ 2d0, 5e-1 /) [End Warning]"
+
+        threshs = (/ 1d-3, 1d-5, 1d-5 /)
+        lbds = (/ 1d-6, 1d-12, 1d-18 /)
+        epss = (/ 2d0, 5d-1 /)
+      End If
+
+149   Continue
+
+      Write(6, '(A, E8.1, E8.1, E8.1)') "  threshs : ", threshs
+      Write(6, '(A, E8.1, E8.1, E8.1)') "  lbds    : ", lbds
+      Write(6, '(A, E8.1, E8.1)')       "  epss    : ", epss
+      Write(6, *)
+      Call flush(6)
 
 !     Construct Fock matrix and diagonalize
       tmp2d=0d0
@@ -429,20 +483,23 @@
      \                 eigs,eigv,hess)
 
 !         Get the search direction
-          if (norm_grad.gt.1d-3) then
-              Call GetLSQ(auxdims,auxdims,deriv,hess,1d-6,dvx)
-          else if (norm_grad.gt.1d-5.and.norm_grad.lt.1d-3) then
-              Call GetLSQ(auxdims,auxdims,deriv,hess,1d-12,dvx)
+          if (norm_grad.gt.threshs(1)) then
+              Call GetLSQ(auxdims,auxdims,deriv,hess,lbds(1),dvx)
+          else if (norm_grad.gt.threshs(2).and.
+     \        norm_grad.lt.threshs(1)) then
+              Call GetLSQ(auxdims,auxdims,deriv,hess,lbds(2),dvx)
           else
-              Call GetLSQ(auxdims,auxdims,deriv,hess,1d-18,dvx)
+              Call GetLSQ(auxdims,auxdims,deriv,hess,lbds(3),dvx)
           end if
 
 !         Trust radius
           step=0d0
           do i=1,auxdims; step=step+dvx(i)**2; end do; step=sqrt(step)
-          eps=0.5d0
-          if(norm_grad.lt.1d-5)eps=2d0
+          eps=epss(2)
+          if(norm_grad.lt.threshs(3))eps=epss(1)
           if (step.gt.eps) then
+              Write(6, '(A)') "  [Warning] limiting step size to max"
+              Call flush(6)
               dvx=dvx/step*eps
           end if
 
@@ -465,10 +522,12 @@
 
           if ((jter/100)*100.eq.jter) then
               write(6,*)'#jter,norm_grad,step',jter,norm_grad,step
+              Call flush(6)
           end if
       end do
 
       write(6,*)'#jter,norm_grad,step',jter,norm_grad,step
+      Call flush(6)
 
       End subroutine newton
 

@@ -15,10 +15,10 @@
 !      write ( *, '(a,i8)' ) '  The number of threads available    = ',
 !     \                       omp_get_max_threads()
 
-      pair=0d0
-      Do i=1,nocc
-          pair(i,i)=1d0
-      End do
+!      pair=0d0
+!      Do i=1,nocc
+!          pair(i,i)=1d0
+!      End do
 
       lamb=0d0
       Call SCF(pair,lamb,alpha,nocc,modims,auxdims,PQ,PQ_inv,
@@ -143,7 +143,7 @@
 !     Loop until density matrix difference is small
       jter=0
 !      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.1000)
-      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.2000)
+      Do while (diff.gt.1d-8 .and. diffE.gt.1d-14 .and. jter.lt.3000)
           jter=jter+1
       !   RI coefficient for each pair density
           daux=0d0
@@ -221,6 +221,7 @@
 
           Write(6,*)'jter,diffE,diff,obj,ER,Ekin',
      /               jter,diffE,diff,obj,ER,Ekin
+          Call flush(6)
 
       end do
 
@@ -332,12 +333,20 @@
 !          write(6,*)'wtime',wtime
 !          write(6,*)'deriv',deriv(1,1)
 
+! @@HY: for larger systems the SAH decomposition does not converge
+!       so I tried to regularize the LSQ according to the convergence
       !   Get step in lamb
+!          if (Resid.gt.1d-4) then
+!              Call GetLSQ(auxdims,auxdims,W,deriv,0d0,dlamb)
+!          else
+!              Call GetLSQ(auxdims,auxdims,W,deriv,0d0,dlamb)
+!          end if
           if (Resid.gt.1d-4) then
-              Call GetLSQ(auxdims,auxdims,W,deriv,0d0,dlamb)
+              Call GetLSQ(auxdims,auxdims,W,deriv,1d-8,dlamb)
           else
-              Call GetLSQ(auxdims,auxdims,W,deriv,0d0,dlamb)
+              Call GetLSQ(auxdims,auxdims,W,deriv,1d-18,dlamb)
           end if
+
           norm=0d0
           Do i=1,auxdims; norm=norm+dlamb(i)**2; End do; norm=Sqrt(norm)
 
@@ -378,10 +387,12 @@
 
           if ((jter/100)*100.eq.jter) then
               write(6,*)'#jter,Resid,norm',jter,Resid,norm
+              Call flush(6)
           end if
       end do
 
       write(6,*)'#jter,Resid,norm',jter,Resid,norm
+      Call flush(6)
           
       End subroutine densmatch
 

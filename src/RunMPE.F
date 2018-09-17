@@ -17,7 +17,6 @@
 !     alpha  degree of localization
 ! ------------------------------------------------
       Implicit None
-      Character*200 data_path,grid_path,str_buf,vci_name
       Integer*4 N,No,M,i,j,k,l,P,LineNum,ios,a,b,c,d,rmd
       Integer*4 FuncType
       Integer*4 maxrecs
@@ -30,9 +29,13 @@
       Real*8 vGKS(M),EGKS,EGKS1(No),EGKS2(No,No)
       Real*8 Kxx
       Integer*4 pair_num
+      Character*200 data_path,grid_path,str_buf,vci_name,vx_name
+      Character*200 vgks_name
       Real*8 tstart, tend
       Character(len=1) junk
-      logical file_present
+      logical file_present,file_present2
+      Real*8 oep_conv_thr
+      Integer*4 oep_max_iter
 
       Call CPU_time(tstart)
 
@@ -134,6 +137,7 @@
         rmd = LineNum/10
         if(mod(i,rmd) .eq. 0) then
           Write(6,'(A,I3,A)') "  ", (i/rmd)*10, "%"
+          Call flush(6)
         End If
       enddo
       Close(18)
@@ -165,16 +169,17 @@
         read(21,*) pair
         close(21)
       else
-        Write(6,'(A,F7.3)') "Running SAH with alpha = ", Alpha
+        write(6,*) 'Setting pair densities orbitals to MOs'
         pair=0d0
 ! @@HY: using the HF occupied orbitals as initial guess?
         Do i=1,No
             pair(i,i)=1d0
         End do
+        Write(6,'(A,F7.3)') "Running SAH with alpha = ", Alpha
         Call partition(No,N,M,PQ,PQ_inv,auxmomo,h,hkin,alpha,pair)
         open(unit=21,File='pairs.txt')
-          write(21,*) alpha
-          write(21,*) pair
+        write(21,*) alpha
+        write(21,*) pair
         close(21)
       end if
 
@@ -192,6 +197,9 @@
       Read(21,*) FuncType, Kxx
       Close(21)
 
+! @@HY: if pair_num > 0 or < 0, skip OEP for total density
+      If (pair_num .ne. 0) Go To 168
+
 !     DFA-OEP for total density
       write(6,*)'-----DFA-OEP for total density-----'
       Call flush(6)
@@ -200,7 +208,7 @@
         total(i,i)=1d0
       End do
       Call oep(grid_path,total,vx,No,N,M,auxmomo,h,hkin,hnuc,VVc,
-     \         DFTMO,FuncType,Kxx,EDFA)
+     \         DFTMO,FuncType,Kxx,EDFA,.true.,1D-12,3000)
       write(6,*)'#EDFA',EDFA
       EMPE=EDFA
 
@@ -212,12 +220,22 @@
      \  tend-tstart, " sec"
       Write(6,*)
 
+168   Continue
 
 !     DFA-OEP for one pair
       write(6,*)'-------MPE1-------'
       Call flush(6)
       Do i=1,No
-        vx=0d0
+! @@HY: fortran does not have left-justified string format
+!       so brute-forcely determine suffix for OEP files.
+        If(i .lt. 10) then
+          Write(str_buf, '(I1,A)') i,".txt"
+        Else
+          Write(str_buf, '(I2,A)') i,".txt"
+        End If
+        vx_name = "vx" // trim(str_buf)
+        vgks_name = "vgks" // trim(str_buf)
+        vci_name = "vci" // trim(str_buf)
 
 ! @@HY: positive pair_num means to perform MPE1 on that pair only
 !       negative pair_num means to perform KS-OEP on that pair only
@@ -231,9 +249,38 @@
 
         Call CPU_time(tstart)
 
+! @@HY: if vx[i].txt exists, read it as initial guess 
+        Inquire(FILE=vx_name,EXIST=file_present) !Check if file exists
+        If (file_present) then
+          Write(6, '(A)') "  Found " // trim(vx_name)
+          Write(6, '(A)') "  Reading vx from " // trim(vx_name)
+          Open(Unit=21, File=vx_name)
+          Read(21, *) vx
+          Close(21)
+        Else
+          Write(6, '(A)') "  " // trim(vx_name) // " not found!"
+          Write(6, '(A)') "  Setting vx to zero"
+          vx=0d0
+        End If
+
+! @@HY: negative pair_num --> hard conv. thresh
+!       positive pair num --> loose conv. thresh (only used as initial
+!                             guess for GKS)
+        oep_conv_thr = 1D-12
+        oep_max_iter = 6000
+        If(pair_num .gt. 0) Then
+          oep_conv_thr = 1D-8
+          oep_max_iter = 1000
+        End If
+
         Call oep(grid_path,pair(:,i),vx,1,N,M,auxmomo,h,hkin,hnuc,VVc,
-     \           DFTMO,FuncType,Kxx,EXX1(i))
+     \    DFTMO,FuncType,Kxx,EXX1(i),.false.,oep_conv_thr,oep_max_iter)
         write(6,*)'#pair,EDFA1',i,EXX1(i)
+
+        Write(6, '(A)') "  Write OEP to file 'vx.txt'"
+        Open(Unit=21, File=vx_name)
+        Write(21, *) vx
+        Close(21)
 
         Call flush(6)
 
@@ -247,14 +294,9 @@
         If(pair_num .lt. 1) Go to 149
 
 ! @@HY: if "vci[i].txt" exists, GKS is not needed
-        If(i .lt. 10) then
-          Write(str_buf, '(I1,A)') i,".txt"
-        Else
-          Write(str_buf, '(I2,A)') i,".txt"
-        End If
-        vci_name = "vci" // trim(str_buf)
 
         Inquire(FILE=vci_name, EXIST=file_present)
+        Inquire(FILE=vgks_name, EXIST=file_present2)
         If (file_present) then
           Write(6, '(A)') "  Reading vci from " // trim(vci_name)
           Write(6, '(A)') "  Skipping GKS-OEP..."
@@ -264,24 +306,33 @@
           Read(21, *) vci
           Close(21)
           Go to 110
-        Else
-          Write(6, '(A)') "  Vci file not detected"
-          Write(6, '(A)') "  Starting GKS-OEP..."
+        Else if (file_present2) then 
+          Write(6, '(A)') "  Reading vgks from " // trim(vgks_name)
+          Write(6, '(A)') "  Starting GKS-OEP with vgks as init guess"
           Write(6, *)
           Call flush(6)
+          Open(Unit=21,File=vgks_name)
+          Read(21, *) vGKS
+          Close(21)
+        Else
+          Write(6, '(A)') "  Vci/Vgks file not detected"
+          Write(6, '(A)') "  Starting GKS-OEP with vx as init guess"
+          Write(6, *)
+          Call flush(6)
+          vGKS=vx
         End If
 
 !       ------- GKS-OEP -------
 
         Call CPU_time(tstart)
 
-        vGKS=vx; Rho=0d0
+        Rho=0d0
 !        vGKS=0.d0
 !       Note Rho is one-pair density
         do j=1,N; do k=1,N
             Rho=Rho+2d0*pair(j,i)*pair(k,i)*auxmomo(j,k,:)
         end do; end do
-        Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i),vci_name)
+        Call GKSenergy(N,1,M,vGKS,h,VVc,auxmomo,Rho,EGKS1(i),vgks_name)
         write(6,*)'#pair,EGKS1',i,EGKS1(i)
 
         Open(Unit=33, File=vci_name)
