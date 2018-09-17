@@ -133,4 +133,5 @@ rd = os.path.dirname(os.path.realpath(__file__))
 cwd = os.getcwd()
 
 writedata(name, rd, cwd)
+os.system("rm {:s}/_hy_tmp_kin {:s}/_hy_tmp_nuc".format(cwd, cwd))
 print("--- %s seconds ---" % (time.time() - start_time))
